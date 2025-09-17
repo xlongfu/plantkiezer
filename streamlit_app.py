@@ -9,8 +9,6 @@ from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Qdrant
 
-import sentence_transformers
-
 
 api_key = st.secrets["API_KEY"]
 
