@@ -32,15 +32,18 @@ llm = init_chat_model(
 )
 
 # ----- RAG process ----- 
+
 embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-mpnet-base-v2"
 )
 
 vectorstore = Qdrant.from_existing_collection(
-    collection_name="planten",
+    collection_name="texas_plants",
     embedding=embeddings,
-    path="vector_stores/plantkiezer1",
+    path="vector_stores/plantkiezer",
 )
+
+# -----------------------
 
 # init and show chat history
 if "messages" not in st.session_state:
