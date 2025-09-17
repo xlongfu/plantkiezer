@@ -9,8 +9,13 @@ from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Qdrant
 
+import os
 
 api_key = st.secrets["API_KEY"]
+
+lock_file = "vector_stores/plantkiezer/.lock"
+if os.path.exists(lock_file):
+    os.remove(lock_file)
 
 
 st.set_page_config(page_title="Plantkiezer.nl", page_icon="🌿", layout="wide")
