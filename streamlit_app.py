@@ -10,6 +10,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Qdrant
 
 import os
+from datetime import datetime
+from PIL import Image, ImageOps
+
 
 api_key = st.secrets["API_KEY"]
 
@@ -17,6 +20,8 @@ lock_file = "vector_stores/plantkiezer/.lock"
 if os.path.exists(lock_file):
     os.remove(lock_file)
 
+# daily limit
+DAILY_LIMIT = 20
 
 st.set_page_config(page_title="Plantkiezer.nl", page_icon="🌿", layout="wide")
 st.title("🌿 Plantkiezer Plant Recommender")
@@ -58,9 +63,24 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# -----------------------
+
+def today_key():
+    return "api_calls_" + datetime.now().strftime("%Y-%m-%d")
+
+key = today_key()
+st.session_state.setdefault(key, 0)
+
+# show usage
+st.caption(f"Today's usage: {st.session_state[key]}/{DAILY_LIMIT}")
+# -----------------------
+
 # create chat input field 
 if prompt := st.chat_input("What kind of plants are you interested in?"):
-
+    if st.session_state[key] >= DAILY_LIMIT:
+        st.warning("Daily API limit reached. Try again tomorrow.")
+        st.stop()
+    
     # store and display the current prompt.
     st.session_state.messages.append({"role": "user", "content": prompt})
 
@@ -128,8 +148,6 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
         
 
         ################################
-        from PIL import Image, ImageOps
-
 
         def load_and_fit_image(path, size=(200, 200)):
             """Open an image, resize with aspect ratio preserved, pad to target size."""
@@ -229,3 +247,5 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
 
     # ------ Finally append the message into history ------
     st.session_state.messages.append({"role": "assistant", "content": assistant_text})
+
+    st.session_state[key] += 1
