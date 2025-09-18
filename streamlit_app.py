@@ -83,15 +83,14 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
 
     query = st.session_state.messages[-1]["content"]
 
-    retrieved_docs = list(vectorstore.max_marginal_relevance_search(query, k=3, filter=None))
-
+    retrieved_docs = vectorstore.max_marginal_relevance_search(query, k=3, filter=None)
 
     def format_docs(docs):
         blocks = []
-
+    
         for i, d in enumerate(docs, start=1):
             src = d.metadata.get("source") or d.metadata.get("id") or f"doc-{i}"
-            blocks.append(f"[{i}] Source: {src}\n{d.page_content}")
+            blocks.append(f"[{i}] {d.page_content}")
         
         return "\n\n".join(blocks)
 
@@ -101,19 +100,21 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
         "You are an expert botanical assistant and also a sales chatbot. \n"
         "You will be provided with three retrieved plant entries. \n"
         f"Context:\n{context}\n\n"
-        "Answer the user query by recommending these three plants. \n"
+        "Answer the user query by recommending these three plants, if it is \n"
+        "relevant and appropriate to the user query. \n"
         "Use the descriptions of the retrieved data to also provide more \n"
-        "information about the plants. Frame your response concisely, while \n"
-        "also like a real salesperson. Here is the user question: \n\n"
+        "information about the plants, if you decide to recommend them. \n"
+        "Frame your response concisely, while also sounding \n"
+        "like a real salesperson. Here is the user question: \n\n"
     )
 
     all_context = [SystemMessage(content=instruction)] + session_messages
 
-    # Optionally, ensure the latest user question is crystal clear:
-    # grounded_msgs.append(HumanMessage(content=f"My question: {query}"))
+    # ------ Generation ------
+    with st.spinner("Thinking…"):
+        response = llm.generate([all_context])
 
-    # --- Generate using your Fireworks LLM via LangChain ---
-    response = llm.generate([all_context])
+    
     assistant_text = ""
 
     try:
@@ -121,20 +122,56 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
     except Exception:
         assistant_text = "Sorry, I couldn't generate a response. Try again later."
 
-    # --- Optional: add a sources footer from doc metadata ---
-    # def collect_citations(docs):
-    #     lines = []
-    #     for i, d in enumerate(docs, start=1):
-    #         src = d.metadata.get("source") or d.metadata.get("id") or f"doc-{i}"
-    #         title = d.metadata.get("title")
-    #         lines.append(f"[{i}] {title+' — ' if title else ''}{src}")
-    #     return "\n".join(lines)
-
-    # if retrieved_docs:
-    #     assistant_text += "\n\n---\nSources:\n" + collect_citations(retrieved_docs)
-
     # --- Display + store ---
     with st.chat_message("assistant"):
         st.markdown(assistant_text)
+        
+        def show_product_card(row):
+            uid = row.metadata['uid']
+            price = row.metadata['price']
+            delivery = row.metadata['delivery']
+            labels = row.metadata['labels']
+            labels = labels.split(",") if labels else []
 
+            name = row.metadata['common_name']
+
+            # get image from local folder
+            img = None
+
+            if uid:
+                images_dir = os.path.join("data", "images")
+
+                if os.path.isdir(images_dir):
+                    for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"):
+                        candidate = os.path.join(images_dir, f"{uid}{ext}")
+
+                        if os.path.exists(candidate):
+                            img = candidate
+                            break
+                
+                else:
+                    img = os.path.join(images_dir, "placeholder.png")
+
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+
+            if img:
+                try:
+                    if os.path.exists(img):
+                        st.image(img, use_column_width=True)
+                    else:
+                        st.markdown(f'<img src="{img}" alt="{name}">', unsafe_allow_html=True)
+                except Exception:
+                    pass
+
+            st.markdown(f"<h4>{name}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<div class='price'>{price}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='meta'>Delivery: {delivery}</div>", unsafe_allow_html=True)
+            if labels:
+                st.write(" ".join([f"<span class='badge'>{l.strip()}</span>" for l in labels if l.strip()]), unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        for i, row in enumerate(retrieved_docs):
+            show_product_card(row)
+
+    # ------ Finally append the message into history ------
     st.session_state.messages.append({"role": "assistant", "content": assistant_text})
