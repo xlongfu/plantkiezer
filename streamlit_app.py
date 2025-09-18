@@ -152,7 +152,7 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
             st.markdown(
                 """
                 <style>
-                .card-img {
+                .card {
                     width: 100%;
                     height: 200px;           /* fixed display height */
                     object-fit: cover;       /* crop/zoom instead of stretch */
