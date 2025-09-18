@@ -133,8 +133,13 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
 
         def load_and_fit_image(path, size=(200, 200)):
             """Open an image, resize with aspect ratio preserved, pad to target size."""
-            img = Image.open(path)
-            img = ImageOps.contain(img, size)  # scale to fit within size, keep ratio
+            try:
+                img = Image.open(path)
+            except:
+                return None
+            
+            img = ImageOps.contain(img, size)
+            
             # pad to exact size (centered)
             background = Image.new("RGB", size, (255, 255, 255))  # white background
             offset = ((size[0] - img.width) // 2, (size[1] - img.height) // 2)
@@ -158,11 +163,14 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
             img = None
             if uid:
                 images_dir = os.path.join("data", "images")
+                
                 if os.path.isdir(images_dir):
                     for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"):
                         candidate = os.path.join(images_dir, f"{uid}{ext}")
+                        
                         if os.path.exists(candidate):
                             img = candidate
+
                             break
                 else:
                     img = os.path.join(images_dir, "placeholder.png")
@@ -188,8 +196,14 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
             # if img and os.path.exists(img):
             #     # direct file path, no base64
             #     st.markdown(f'<img src="{img}" class="card-img">', unsafe_allow_html=True)
+            
+            picture = load_and_fit_image(img, size=(200, 200))
 
-            st.image(load_and_fit_image(img, size=(200, 200)))
+            if picture:
+                st.image(picture)
+            else:
+                st.image(Image.open(os.path.join(images_dir, "placeholder.png")))
+                st.text("No image available yet.")
 
             st.markdown(f"<h4>{name}</h4>", unsafe_allow_html=True)
             st.markdown(f"<div class='price'>€{price}</div>", unsafe_allow_html=True)
