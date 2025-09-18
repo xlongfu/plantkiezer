@@ -111,7 +111,7 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
     all_context = [SystemMessage(content=instruction)] + session_messages
 
     # ------ Generation ------
-    with st.spinner("Thinking…"):
+    with st.spinner("Great question! Let me think..."):
         response = llm.generate([all_context])
 
     
@@ -126,6 +126,25 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
     with st.chat_message("assistant"):
         st.markdown(assistant_text)
         
+
+        ################################
+        from PIL import Image, ImageOps
+
+
+        def load_and_fit_image(path, size=(200, 200)):
+            """Open an image, resize with aspect ratio preserved, pad to target size."""
+            img = Image.open(path)
+            img = ImageOps.contain(img, size)  # scale to fit within size, keep ratio
+            # pad to exact size (centered)
+            background = Image.new("RGB", size, (255, 255, 255))  # white background
+            offset = ((size[0] - img.width) // 2, (size[1] - img.height) // 2)
+            background.paste(img, offset)
+
+            return background
+
+        ################################
+
+
         def show_product_card(row):
             uid = row.metadata['uid']
             price = row.metadata['price']
@@ -149,29 +168,31 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
                     img = os.path.join(images_dir, "placeholder.png")
 
             # CSS 
-            st.markdown(
-                """
-                <style>
-                .card {
-                    width: 100%;
-                    height: 200px;           /* fixed display height */
-                    object-fit: cover;       /* crop/zoom instead of stretch */
-                    object-position: center; /* focus on center */
-                    border-radius: 8px;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
+            # st.markdown(
+            #     """
+            #     <style>
+            #     .card {
+            #         width: 100%;
+            #         height: 200px;           /* fixed display height */
+            #         object-fit: cover;       /* crop/zoom instead of stretch */
+            #         object-position: center; /* focus on center */
+            #         border-radius: 8px;
+            #     }
+            #     </style>
+            #     """,
+            #     unsafe_allow_html=True,
+            # )
 
-            st.markdown('<div class="card">', unsafe_allow_html=True)
+            # st.markdown('<div class="card">', unsafe_allow_html=True)
 
-            if img and os.path.exists(img):
-                # direct file path, no base64
-                st.markdown(f'<img src="{img}" class="card-img">', unsafe_allow_html=True)
+            # if img and os.path.exists(img):
+            #     # direct file path, no base64
+            #     st.markdown(f'<img src="{img}" class="card-img">', unsafe_allow_html=True)
+
+            st.image(load_and_fit_image(img, size=(200, 200)))
 
             st.markdown(f"<h4>{name}</h4>", unsafe_allow_html=True)
-            st.markdown(f"<div class='price'>{price}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='price'>€{price}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='meta'>Delivery: {delivery}</div>", unsafe_allow_html=True)
 
             if labels:
