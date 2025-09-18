@@ -166,12 +166,20 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
             st.markdown(f"<h4>{name}</h4>", unsafe_allow_html=True)
             st.markdown(f"<div class='price'>{price}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='meta'>Delivery: {delivery}</div>", unsafe_allow_html=True)
+
             if labels:
                 st.write(" ".join([f"<span class='badge'>{l.strip()}</span>" for l in labels if l.strip()]), unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        for i, row in enumerate(retrieved_docs):
-            show_product_card(row)
+        st.subheader("Recommended plants")
+        
+        for i in range(0, len(retrieved_docs), 3):
+            row_docs = retrieved_docs[i:i+3]
+            cols = st.columns(len(row_docs)) 
+            
+            for col, doc in zip(cols, row_docs):
+                with col:
+                    show_product_card(doc)
 
     # ------ Finally append the message into history ------
     st.session_state.messages.append({"role": "assistant", "content": assistant_text})
