@@ -137,38 +137,49 @@ if prompt := st.chat_input("What kind of plants are you interested in?"):
 
             # get image from local folder
             img = None
-
             if uid:
                 images_dir = os.path.join("data", "images")
-
                 if os.path.isdir(images_dir):
                     for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"):
                         candidate = os.path.join(images_dir, f"{uid}{ext}")
-
                         if os.path.exists(candidate):
                             img = candidate
                             break
-                
                 else:
                     img = os.path.join(images_dir, "placeholder.png")
 
+            # CSS 
+            st.markdown(
+                """
+                <style>
+                .card-img {
+                    width: 100%;
+                    height: 200px;           /* fixed display height */
+                    object-fit: cover;       /* crop/zoom instead of stretch */
+                    object-position: center; /* focus on center */
+                    border-radius: 8px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+
             st.markdown('<div class="card">', unsafe_allow_html=True)
 
-            if img:
-                try:
-                    if os.path.exists(img):
-                        st.image(img, use_column_width=True)
-                    else:
-                        st.markdown(f'<img src="{img}" alt="{name}">', unsafe_allow_html=True)
-                except Exception:
-                    pass
+            if img and os.path.exists(img):
+                # direct file path, no base64
+                st.markdown(f'<img src="{img}" class="card-img">', unsafe_allow_html=True)
 
             st.markdown(f"<h4>{name}</h4>", unsafe_allow_html=True)
             st.markdown(f"<div class='price'>{price}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='meta'>Delivery: {delivery}</div>", unsafe_allow_html=True)
 
             if labels:
-                st.write(" ".join([f"<span class='badge'>{l.strip()}</span>" for l in labels if l.strip()]), unsafe_allow_html=True)
+                st.markdown(
+                    " ".join([f"<span class='badge'>{l.strip()}</span>" for l in labels if l.strip()]),
+                    unsafe_allow_html=True
+                )
+
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.subheader("Recommended plants")
